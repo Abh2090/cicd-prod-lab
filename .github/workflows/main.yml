@@ -35,7 +35,7 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
 
             if grep -q "3001" /etc/nginx/nginx.conf; then
-              echo "BLUE active → switching to GREEN"
+              echo "Switching to GREEN"
 
               docker stop green || true
               docker rm green || true
@@ -45,19 +45,10 @@ jobs:
               --name green \
               ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
 
-              echo "worker_processes auto;
-events { worker_connections 1024; }
-http {
-  server {
-    listen 80;
-    location / {
-      proxy_pass http://127.0.0.1:3002;
-    }
-  }
-}" | sudo tee /etc/nginx/nginx.conf
+              sudo sed -i 's/3001/3002/' /etc/nginx/nginx.conf
 
             else
-              echo "GREEN active → switching to BLUE"
+              echo "Switching to BLUE"
 
               docker stop blue || true
               docker rm blue || true
@@ -67,16 +58,7 @@ http {
               --name blue \
               ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
 
-              echo "worker_processes auto;
-events { worker_connections 1024; }
-http {
-  server {
-    listen 80;
-    location / {
-      proxy_pass http://127.0.0.1:3001;
-    }
-  }
-}" | sudo tee /etc/nginx/nginx.conf
+              sudo sed -i 's/3002/3001/' /etc/nginx/nginx.conf
 
             fi
 
