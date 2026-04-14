@@ -24,3 +24,46 @@ jobs:
 
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
+
+            if docker ps | grep -q blue; then
+              echo "Blue is running → Deploy Green"
+
+              docker stop green || true
+              docker rm green || true
+
+              docker run -d -p 3002:3000 \
+              -e MESSAGE="Hello from GREEN 💚" \
+              --name green \
+              ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
+
+              sed -i 's/3001/3002/' /etc/nginx/sites-available/default
+
+            else
+              echo "Green is running → Deploy Blue"
+
+              docker stop blue || true
+              docker rm blue || true
+
+              docker run -d -p 3001:3000 \
+              -e MESSAGE="Hello from BLUE 💙" \
+              --name blue \
+              ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
+
+              sed -i 's/3002/3001/' /etc/nginx/sites-available/default
+            fi
+
+            sudo systemctl restart nginx
