@@ -45,8 +45,7 @@ jobs:
               --name green \
               ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
 
-              sudo bash -c 'cat > /etc/nginx/nginx.conf <<EOF
-worker_processes auto;
+              echo "worker_processes auto;
 events { worker_connections 1024; }
 http {
   server {
@@ -55,8 +54,7 @@ http {
       proxy_pass http://127.0.0.1:3002;
     }
   }
-}
-EOF'
+}" | sudo tee /etc/nginx/nginx.conf
 
             else
               echo "GREEN active → switching to BLUE"
@@ -69,8 +67,7 @@ EOF'
               --name blue \
               ${{ secrets.DOCKER_USERNAME }}/cicd-app:latest
 
-              sudo bash -c 'cat > /etc/nginx/nginx.conf <<EOF
-worker_processes auto;
+              echo "worker_processes auto;
 events { worker_connections 1024; }
 http {
   server {
@@ -79,8 +76,7 @@ http {
       proxy_pass http://127.0.0.1:3001;
     }
   }
-}
-EOF'
+}" | sudo tee /etc/nginx/nginx.conf
 
             fi
 
